@@ -1,0 +1,78 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+
+# Configuration de la page
+st.set_page_config(page_title="Mon Hub de Révisions", page_icon="📚", layout="wide")
+
+# Titre et En-tête
+st.title("📚 Mon Hub de Révisions")
+st.markdown("---")
+
+# Initialisation de la mémoire (Session State) pour stocker les données temporairement
+if 'todos' not in st.session_state:
+    st.session_state.todos = []
+if 'ressources' not in st.session_state:
+    st.session_state.ressources = []
+
+# Barre latérale (Sidebar) pour la navigation
+menu = st.sidebar.radio("Navigation", ["📌 Tableau de bord", "🔗 Mes Ressources", "📝 Notes Rapides"])
+
+# --- SECTION 1 : TABLEAU DE BORD (TO-DO LIST) ---
+if menu == "📌 Tableau de bord":
+    st.header("📅 Mes Tâches de Révision")
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        new_task = st.text_input("Ajouter une tâche (ex: Finir le chapitre de Math)")
+    with col2:
+        add_task = st.button("Ajouter", use_container_width=True)
+
+    if add_task and new_task:
+        st.session_state.todos.append({"task": new_task, "done": False})
+        st.success("Tâche ajoutée !")
+
+    # Affichage des tâches
+    if st.session_state.todos:
+        for i, item in enumerate(st.session_state.todos):
+            col_a, col_b = st.columns([0.1, 0.9])
+            done = col_a.checkbox("", value=item["done"], key=f"check_{i}")
+            st.session_state.todos[i]["done"] = done
+            
+            if done:
+                col_b.markdown(f"~~{item['task']}~~")
+            else:
+                col_b.write(item['task'])
+            
+        # Bouton pour nettoyer les tâches finies
+        if st.button("Supprimer les tâches terminées"):
+            st.session_state.todos = [t for t in st.session_state.todos if not t["done"]]
+            st.rerun()
+    else:
+        st.info("Aucune tâche pour le moment. Profites-en !")
+
+# --- SECTION 2 : RESSOURCES ---
+elif menu == "🔗 Mes Ressources":
+    st.header("📂 Mes Cours et Liens")
+    
+    with st.expander("Ajouter une nouvelle ressource"):
+        matiere = st.selectbox("Matière", ["Maths", "Histoire", "Physique", "Langues", "Autre"])
+        titre_lien = st.text_input("Titre du lien/fichier")
+        url = st.text_input("URL (Lien Drive, YouTube, Site web)")
+        
+        if st.button("Sauvegarder la ressource"):
+            st.session_state.ressources.append({"matiere": matiere, "titre": titre_lien, "url": url})
+            st.success("Ressource ajoutée !")
+
+    # Affichage sous forme de tableau
+    if st.session_state.ressources:
+        df = pd.DataFrame(st.session_state.ressources)
+        st.table(df)
+    else:
+        st.warning("Tu n'as pas encore ajouté de ressources.")
+
+# --- SECTION 3 : NOTES RAPIDES ---
+elif menu == "📝 Notes Rapides":
+    st.header("💡 Zone de brouillon")
+    notes = st.text_area("Ecris tes idées ici...", height=300)
+    st.download_button("Télécharger mes notes (.txt)", notes, file_name=f"notes_{datetime.now().strftime('%Y-%m-%d')}.txt")
