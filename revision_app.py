@@ -1,78 +1,118 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
 
 # Configuration de la page
-st.set_page_config(page_title="Mon Hub de Révisions", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Révisions Éco", page_icon="🎓", layout="centered")
 
-# Titre et En-tête
-st.title("📚 Mon Hub de Révisions")
-st.markdown("---")
+# CSS pour rendre les cartes jolies
+st.markdown("""
+<style>
+    .flashcard {
+        background-color: #f0f2f6;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .question { font-size: 24px; font-weight: bold; color: #333; }
+    .reponse { font-size: 20px; color: #0068c9; margin-top: 20px; border-top: 2px solid #ddd; padding-top: 15px;}
+</style>
+""", unsafe_allow_html=True)
 
-# Initialisation de la mémoire (Session State) pour stocker les données temporairement
-if 'todos' not in st.session_state:
-    st.session_state.todos = []
-if 'ressources' not in st.session_state:
-    st.session_state.ressources = []
+# Barre latérale
+menu = st.sidebar.radio("Matières", ["📈 Analyse Économique", "📜 Histoire Économique"])
 
-# Barre latérale (Sidebar) pour la navigation
-menu = st.sidebar.radio("Navigation", ["📌 Tableau de bord", "🔗 Mes Ressources", "📝 Notes Rapides"])
+# --- SECTION 1 : ANALYSE ÉCO (Flashcards TD 6-7) ---
+if menu == "📈 Analyse Économique":
+    st.title("📈 TD 6-7 : Entraînement")
 
-# --- SECTION 1 : TABLEAU DE BORD (TO-DO LIST) ---
-if menu == "📌 Tableau de bord":
-    st.header("📅 Mes Tâches de Révision")
+    # --- C'EST ICI QUE TU MODIFIES TES QUESTIONS/RÉPONSES ---
+    # J'ai mis des exemples classiques de TD 6-7 (Coûts et Marchés)
+    # Remplace le texte entre les guillemets "" par tes vrais exos.
+    flashcards = [
+        {
+            "question": "TD6 - Qu'est-ce que le Coût Marginal (Cm) ?",
+            "reponse": "C'est le coût de production d'une unité supplémentaire. Mathématiquement : Cm = Dérivée du Coût Total (CT')."
+        },
+        {
+            "question": "TD6 - Condition de maximisation du profit en CPP ?",
+            "reponse": "Le profit est maximal quand le Prix (P) est égal au Coût Marginal (Cm). Donc P = Cm."
+        },
+        {
+            "question": "TD7 - Définition du Monopole",
+            "reponse": "Structure de marché où il n'y a qu'un seul offreur face à une multitude de demandeurs. Le faiseur de prix (Price maker)."
+        },
+        {
+            "question": "TD7 - L'indice de Lerner (Pouvoir de marché)",
+            "reponse": "L = (P - Cm) / P. Plus L est proche de 1, plus le pouvoir de monopole est fort."
+        },
+        {
+            "question": "TD7 - Différence entre CPP et Monopole sur le surplus ?",
+            "reponse": "Le monopole réduit le surplus du consommateur et crée une 'perte sèche' pour la société par rapport à la CPP."
+        }
+    ]
+    # ---------------------------------------------------------
+
+    # Gestion de l'état (pour savoir à quelle carte on est)
+    if 'card_index' not in st.session_state:
+        st.session_state.card_index = 0
+    if 'show_answer' not in st.session_state:
+        st.session_state.show_answer = False
+
+    # Récupérer la carte actuelle
+    current_card = flashcards[st.session_state.card_index]
+
+    # Affichage de la barre de progression
+    st.progress((st.session_state.card_index + 1) / len(flashcards))
+    st.caption(f"Carte {st.session_state.card_index + 1} sur {len(flashcards)}")
+
+    # Affichage de la carte
+    reponse_html = f"<div class='reponse'>{current_card['reponse']}</div>" if st.session_state.show_answer else ""
     
-    col1, col2 = st.columns([3, 1])
+    st.markdown(f"""
+    <div class="flashcard">
+        <div class="question">{current_card['question']}</div>
+        {reponse_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Boutons de contrôle
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
     with col1:
-        new_task = st.text_input("Ajouter une tâche (ex: Finir le chapitre de Math)")
+        if st.button("⬅️ Précédent"):
+            if st.session_state.card_index > 0:
+                st.session_state.card_index -= 1
+                st.session_state.show_answer = False
+                st.rerun()
+
     with col2:
-        add_task = st.button("Ajouter", use_container_width=True)
-
-    if add_task and new_task:
-        st.session_state.todos.append({"task": new_task, "done": False})
-        st.success("Tâche ajoutée !")
-
-    # Affichage des tâches
-    if st.session_state.todos:
-        for i, item in enumerate(st.session_state.todos):
-            col_a, col_b = st.columns([0.1, 0.9])
-            done = col_a.checkbox("", value=item["done"], key=f"check_{i}")
-            st.session_state.todos[i]["done"] = done
-            
-            if done:
-                col_b.markdown(f"~~{item['task']}~~")
-            else:
-                col_b.write(item['task'])
-            
-        # Bouton pour nettoyer les tâches finies
-        if st.button("Supprimer les tâches terminées"):
-            st.session_state.todos = [t for t in st.session_state.todos if not t["done"]]
+        if st.button("👀 Révéler / Cacher la réponse", use_container_width=True):
+            st.session_state.show_answer = not st.session_state.show_answer
             st.rerun()
-    else:
-        st.info("Aucune tâche pour le moment. Profites-en !")
 
-# --- SECTION 2 : RESSOURCES ---
-elif menu == "🔗 Mes Ressources":
-    st.header("📂 Mes Cours et Liens")
+    with col3:
+        if st.button("Suivant ➡️"):
+            if st.session_state.card_index < len(flashcards) - 1:
+                st.session_state.card_index += 1
+                st.session_state.show_answer = False
+                st.rerun()
+
+# --- SECTION 2 : HISTOIRE ÉCO ---
+elif menu == "📜 Histoire Économique":
+    st.title("📜 Histoire Économique")
+    st.info("Espace dédié aux notes de cours et frises chronologiques.")
     
-    with st.expander("Ajouter une nouvelle ressource"):
-        matiere = st.selectbox("Matière", ["Maths", "Histoire", "Physique", "Langues", "Autre"])
-        titre_lien = st.text_input("Titre du lien/fichier")
-        url = st.text_input("URL (Lien Drive, YouTube, Site web)")
-        
-        if st.button("Sauvegarder la ressource"):
-            st.session_state.ressources.append({"matiere": matiere, "titre": titre_lien, "url": url})
-            st.success("Ressource ajoutée !")
-
-    # Affichage sous forme de tableau
-    if st.session_state.ressources:
-        df = pd.DataFrame(st.session_state.ressources)
-        st.table(df)
-    else:
-        st.warning("Tu n'as pas encore ajouté de ressources.")
-
-# --- SECTION 3 : NOTES RAPIDES ---
-elif menu == "📝 Notes Rapides":
-    st.header("💡 Zone de brouillon")
-    notes = st.text_area("Ecris tes idées ici...", height=300)
-    st.download_button("Télécharger mes notes (.txt)", notes, file_name=f"notes_{datetime.now().strftime('%Y-%m-%d')}.txt")
+    # Zone de prise de notes simple pour l'instant
+    st.subheader("Mes Fiches de révision")
+    
+    sujet = st.text_input("Sujet (ex: Révolution Industrielle)")
+    contenu = st.text_area("Contenu clé à retenir", height=200)
+    
+    if st.button("Sauvegarder la note"):
+        st.success(f"Note sur '{sujet}' enregistrée (simulation) !")
